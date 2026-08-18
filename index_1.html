@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>業務委託費 計算ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F5F0;
+    --panel:#FFFFFF;
+    --ink:#20281F ;
+    --ink-soft:#5E6B5C;
+    --ink-faint:#8B9689;
+    --line:#DCE3D9;
+    --line-soft:#EAEFE6;
+    --accent:#3F6F5E;
+    --accent-dark:#2C5245;
+    --accent-tint:#E4EEE8;
+    --warn:#BE6A46;
+    --warn-tint:#FBECE3;
+    --radius:10px;
+    --serif:'Noto Serif JP', serif;
+    --sans:'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:14px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;font-size:13px;}
+  #app{min-height:100vh;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{font-family:var(--serif);font-weight:700;font-size:19px;letter-spacing:.02em;}
+  .brand .sub{font-size:11.5px;color:var(--ink-faint);letter-spacing:.06em;}
+  .topbar-actions button{
+    background:none;border:1px solid var(--line);border-radius:8px;
+    padding:7px 13px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .topbar-actions button:hover{border-color:var(--accent);color:var(--accent-dark);}
+
+  .layout{display:flex;align-items:flex-start;max-width:1240px;margin:0 auto;}
+  .sidebar{
+    width:250px;flex:0 0 250px;padding:22px 18px;position:sticky;top:0;
+    display:flex;flex-direction:column;gap:22px;
+  }
+  .sidebar-section h3{
+    margin:0 0 8px;font-size:11px;letter-spacing:.08em;color:var(--ink-faint);
+    text-transform:uppercase;font-weight:700;
+  }
+  .sidebar-section select, .sidebar-section input[type=month]{
+    width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--panel);color:var(--ink);
+  }
+  .side-btn{
+    width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--ink-soft);margin-top:6px;
+  }
+  .side-btn:hover{border-color:var(--accent);color:var(--accent-dark);}
+  .side-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .side-btn.primary:hover{background:var(--accent-dark);}
+  .hint{font-size:11.5px;color:var(--ink-faint);margin-top:6px;line-height:1.5;}
+  .hint.active{color:var(--warn);}
+
+  .content{flex:1;min-width:0;padding:22px 24px 80px;}
+
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:20px;}
+  .step-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;}
+  .step-no{font-family:var(--serif);font-size:13px;color:var(--accent);border:1px solid var(--accent-tint);
+    background:var(--accent-tint);padding:2px 9px;border-radius:20px;font-weight:700;letter-spacing:.05em;}
+  .step-head h2{font-family:var(--serif);font-size:17px;margin:0;font-weight:700;}
+  .step-desc{font-size:12.5px;color:var(--ink-soft);margin:-8px 0 16px;}
+
+  .row-flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .btn{
+    background:var(--accent);color:#fff;border:none;border-radius:8px;
+    padding:9px 16px;font-size:13px;font-weight:500;
+  }
+  .btn:hover{background:var(--accent-dark);}
+  .btn.ghost{background:none;border:1px solid var(--line);color:var(--ink-soft);}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent-dark);}
+  .btn.small{padding:5px 10px;font-size:12px;}
+  .btn.warn{background:var(--warn);}
+  .btn.warn:hover{background:#a4573a;}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;}
+
+  .stat-cards{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .stat-card{background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:10px 16px;min-width:88px;}
+  .stat-card .n{font-family:var(--serif);font-size:20px;font-weight:700;}
+  .stat-card .l{font-size:11px;color:var(--ink-faint);}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{
+    text-align:left;font-size:11px;color:var(--ink-faint);font-weight:700;
+    letter-spacing:.03em;padding:7px 8px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--panel);
+  }
+  td{padding:6px 8px;border-bottom:1px solid var(--line-soft);vertical-align:middle;}
+  tr:hover td{background:var(--bg);}
+  .rows-scroll{max-height:340px;overflow:auto;border:1px solid var(--line-soft);border-radius:10px;margin-top:10px;}
+  .menu-name{max-width:320px;white-space:normal;line-height:1.4;}
+  .num{text-align:right;font-variant-numeric:tabular-nums;}
+  select.cat-select{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;}
+  .row-classify{min-width:210px;}
+  .chip-list{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-tint);color:var(--accent-dark);border-radius:20px;padding:2px 4px 2px 9px;font-size:11px;}
+  .chip button{border:none;background:none;color:var(--accent-dark);font-size:12px;cursor:pointer;padding:0 4px;line-height:1;}
+  .cat-add{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:11.5px;}
+  .excl-check{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-faint);margin-top:4px;}
+  tr.row-excluded td{opacity:.45;}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:20px;background:var(--accent-tint);color:var(--accent-dark);}
+  .tag.repeat{background:#EFEAE0;color:#7A6A46;}
+  .tag.nom{background:#F1E4EC;color:#8A4A6C;}
+
+  .panel-box{border:1px dashed var(--line);border-radius:10px;padding:14px 16px;margin-top:6px;background:var(--bg);}
+
+  .product-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+  .pc-row1{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .pc-row1 input.pc-label{flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-weight:500;}
+  .pc-row1 select.pc-kind{padding:6px 8px;border:1px solid var(--line);border-radius:6px;width:130px;}
+  .pc-row1 button{border:none;background:none;color:var(--ink-faint);font-size:14px;padding:2px 6px;}
+  .pc-row1 button:hover{color:var(--accent-dark);}
+  .pc-row1 button.pc-del:hover{color:var(--warn);}
+  .pc-row2{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
+  .pc-field{display:flex;flex-direction:column;gap:2px;}
+  .pc-field label{font-size:10px;color:var(--ink-faint);}
+  .pc-field input[type=number]{width:78px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;text-align:right;}
+  .pc-check{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink-soft);}
+  .pc-row3{display:flex;gap:8px;}
+  .pc-row3 input{flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;}
+  .pc-row3 input.pc-csvcat{flex:0 0 150px;}
+
+  .cat-table td.field{padding:4px 8px;}
+  .cat-table input.qty, .cat-table input.price{
+    width:84px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;text-align:right;
+  }
+  .cat-table input.amt-manual{width:100px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;text-align:right;}
+  .auto-hint{font-size:10.5px;color:var(--ink-faint);display:block;margin-top:2px;}
+  .diff-hint{font-size:10.5px;color:var(--warn);display:block;margin-top:2px;}
+  .reset-btn{border:none;background:none;color:var(--accent);font-size:11px;cursor:pointer;padding:0 0 0 4px;}
+  .cat-table tfoot td{border-top:2px solid var(--ink);font-weight:700;padding-top:10px;}
+
+  .compare-toggle{font-size:12px;color:var(--accent-dark);text-decoration:underline;cursor:pointer;background:none;border:none;padding:0;margin-top:10px;}
+
+  .deduct-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:12px;}
+  .deduct-item label{font-size:11.5px;color:var(--ink-soft);display:block;margin-bottom:4px;}
+  .deduct-item input{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;text-align:right;}
+
+  .hero{
+    display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(135deg,var(--accent-dark),var(--accent));
+    color:#fff;border-radius:12px;padding:20px 26px;margin-top:4px;
+  }
+  .hero .label{font-size:12px;letter-spacing:.06em;opacity:.85;}
+  .hero .amount{font-family:var(--serif);font-size:34px;font-weight:700;margin-top:2px;}
+  .hero .sub{font-size:11.5px;opacity:.8;margin-top:4px;}
+
+  .sheet-wrap{display:flex;gap:18px;overflow-x:auto;margin-top:18px;padding-bottom:6px;}
+  .sheet{
+    width:520px;flex:0 0 520px;background:#fff;border:1px solid var(--line);border-radius:4px;
+    padding:26px 28px;font-size:12px;color:#1c1c1c;
+  }
+  .sheet h3{font-family:var(--serif);font-size:15px;margin:0 0 16px;}
+  .sheet .addr-block{display:flex;justify-content:space-between;margin-bottom:14px;}
+  .sheet .addr-block .to{font-size:13px;border-bottom:1px solid #333;padding-bottom:4px;display:inline-block;}
+  .sheet .from{text-align:right;font-size:11px;line-height:1.6;}
+  .sheet .from-seal-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;font-size:11px;font-weight:700;margin-bottom:2px;}
+  .sheet .seal-img{width:34px;height:34px;object-fit:contain;}
+  .sheet .total-box{border:1px solid #999;display:flex;margin-bottom:14px;}
+  .sheet .total-box .k{background:#EDEDED;padding:8px 12px;font-size:12px;flex:0 0 130px;}
+  .sheet .total-box .v{padding:8px 12px;font-size:16px;font-weight:700;text-align:right;flex:1;}
+  .sheet table{font-size:11px;}
+  .sheet th{background:#F2F2F2;color:#333;border:1px solid #ccc;position:static;}
+  .sheet td{border:1px solid #ccc;}
+  .sheet .sec-title{background:#E4E4E4;font-weight:700;text-align:center;padding:5px;font-size:11.5px;border:1px solid #ccc;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(20,26,20,.42);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal{background:#fff;border-radius:14px;padding:24px 26px;width:100%;max-width:520px;max-height:86vh;overflow:auto;}
+  .modal h3{font-family:var(--serif);margin:0 0 14px;font-size:16px;}
+  .field-row{margin-bottom:10px;}
+  .field-row label{font-size:11.5px;color:var(--ink-soft);display:block;margin-bottom:4px;}
+  .field-row input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+  fieldset{border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;margin:14px 0;}
+  legend{font-size:11px;color:var(--ink-faint);padding:0 6px;font-weight:700;}
+
+  .empty{color:var(--ink-faint);font-size:12.5px;padding:20px 0;text-align:center;}
+
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .layout{display:block;max-width:none;}
+    .content{padding:0;}
+    .step{border:none;padding:0;margin:0;}
+    .sheet-wrap{overflow:visible;display:block;}
+    .sheet{width:190mm;padding:12mm;border:none;page-break-after:always;}
+  }
+  @media (max-width: 880px){
+    .layout{flex-direction:column;}
+    .sidebar{width:100%;flex:none;position:static;flex-direction:row;flex-wrap:wrap;}
+    .sidebar-section{flex:1 1 200px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar no-print">
+    <div class="brand">
+      <span class="mark">業務委託費 計算ツール</span>
+      <span class="sub">売上明細 → 分類確認 → 支給明細書</span>
+    </div>
+    <div class="topbar-actions no-print">
+      <button id="btnCompany">会社情報</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar no-print">
+      <div class="sidebar-section">
+        <h3>スタッフ</h3>
+        <select id="staffSelect"></select>
+        <button class="side-btn" id="btnAddStaff">＋ スタッフを追加</button>
+        <button class="side-btn" id="btnEditStaff">基本情報を編集</button>
+      </div>
+      <div class="sidebar-section">
+        <h3>対象月</h3>
+        <input type="month" id="monthInput">
+      </div>
+      <div class="sidebar-section">
+        <h3>保存データ</h3>
+        <button class="side-btn primary" id="btnSaveRecord">この内容を保存</button>
+        <button class="side-btn" id="btnLoadRecord">保存データを読み込む</button>
+        <div class="hint" id="savedHint">この月の保存データはまだありません。</div>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <section class="step no-print" id="step1">
+        <div class="step-head"><span class="step-no">01</span><h2>売上明細（CSV）を取り込む</h2></div>
+        <div class="step-desc">サロンボードから出力したCSVをそのままアップロードしてください。選択中のスタッフ名で自動的に絞り込みます。</div>
+        <div class="row-flex">
+          <input type="file" id="csvFile" accept=".csv" class="no-print">
+          <button class="btn ghost small no-print" id="btnEncodingToggle">文字化けする場合はUTF-8で再読込</button>
+        </div>
+        <div id="step1Stats"></div>
+      </section>
+
+      <section class="step no-print" id="step2">
+        <div class="step-head"><span class="step-no">02</span><h2>分類の確認・修正</h2></div>
+        <div class="step-desc">商品（メニュー区分）はスタッフごとに設定できます。単価・歩合率・キーワードを編集すると、CSVの自動分類にも反映されます。</div>
+
+        <button class="compare-toggle no-print" id="btnToggleProducts">＋ 商品を編集する（単価・歩合率・キーワード）</button>
+        <div class="panel-box no-print" id="productsBox" style="display:none;"></div>
+
+        <div class="rows-scroll" id="rowsTableWrap"></div>
+
+        <h3 style="font-family:var(--serif);font-size:14.5px;margin:20px 0 4px;">区分ごとの集計</h3>
+        <div id="catTableWrap"></div>
+
+        <h3 style="font-family:var(--serif);font-size:14.5px;margin:22px 0 4px;">控除</h3>
+        <button class="compare-toggle no-print" id="btnToggleDeductions">＋ 控除項目を編集する</button>
+        <div class="panel-box no-print" id="deductionsBox" style="display:none;"></div>
+        <div id="deductWrap"></div>
+      </section>
+
+      <section class="step" id="step3">
+        <div class="step-head no-print"><span class="step-no">03</span><h2>支給明細書</h2></div>
+        <div id="heroWrap" class="no-print"></div>
+        <div class="row-flex no-print" style="margin-top:16px;">
+          <button class="btn" id="btnPrint">支給明細書をPDF保存 / 印刷</button>
+        </div>
+        <div class="sheet-wrap" id="sheetWrap"></div>
+      </section>
+
+    </main>
+  </div>
+
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ============================== 既定値 ============================== */
+const SEAL_DEFAULT_DATA_URI = 'data:image/png;base64,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';
+const DEFAULT_PRICES = {C30:3500,C60:6000,C90:8500,C120:11000,S60:6500,S90:9000,S120:11500,KOGAO:0,EMS:2000,EXT10:1000};
+const DEFAULT_RATE_STANDARD = 0.45;
+const DEFAULT_RATE_HEAD = 0.50;
+const DEFAULT_DEDUCTIONS = {insurance:1800, transferFee:330};
+const DEFAULT_LINEN_RATE_PCT = 1; // 支給総額に対する % (ユーザー指定: リネン費 = 支給総額の1%)
+
+function mkProduct(label, kind, price, rate, extra){
+  return Object.assign({
+    id: uid(), label, kind, price: price||0, rate: rate||0,
+    keywords: [], csvCategoryMatch: '', durationMinutes: null,
+    durationFallbackCategories: [],
+    isSet: false, isCatchAll: false, autoSource: null
+  }, extra||{});
+}
+const DEFAULT_DURATION_CATEGORIES = ['整体','ボディケア','足裏・リフレ','その他'];
+function defaultProducts(prices, rateStd, rateHead, nominationUnit){
+  prices = prices || DEFAULT_PRICES;
+  rateStd = rateStd!=null ? rateStd : DEFAULT_RATE_STANDARD;
+  rateHead = rateHead!=null ? rateHead : DEFAULT_RATE_HEAD;
+  return [
+    mkProduct('コース30分','count',prices.C30,rateStd,{durationMinutes:30,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('コース60分','count',prices.C60,rateStd,{durationMinutes:60,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('コース90分','count',prices.C90,rateStd,{durationMinutes:90,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('コース120分','count',prices.C120,rateStd,{durationMinutes:120,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('セット60分','count',prices.S60,rateStd,{durationMinutes:60,isSet:true,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('セット90分','count',prices.S90,rateStd,{durationMinutes:90,isSet:true,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('セット120分','count',prices.S120,rateStd,{durationMinutes:120,isSet:true,durationFallbackCategories:[...DEFAULT_DURATION_CATEGORIES]}),
+    mkProduct('小顔','count',prices.KOGAO||0,rateStd,{keywords:['小顔']}),
+    mkProduct('EMS','count',prices.EMS,rateStd,{keywords:['EMS']}),
+    mkProduct('特別メニュー(合計)','aggregate',0,rateStd,{isCatchAll:true}),
+    mkProduct('ヘッドメニュー(合計)','aggregate',0,rateHead,{csvCategoryMatch:'ヘッド'}),
+    mkProduct('延長10分','count',prices.EXT10,rateStd,{keywords:['延長']}),
+    mkProduct('指名料','manual',nominationUnit||0,rateStd,{autoSource:'nomination'}),
+  ];
+}
+
+function mkDeduction(label, kind, value){
+  return { id: uid(), label, kind, amount: kind==='fixed' ? (value||0) : 0, percent: kind==='percent' ? (value||0) : 0 };
+}
+function defaultDeductions(insurance, transferFee, linenPct){
+  return [
+    mkDeduction('保険料','fixed', insurance!=null?insurance:DEFAULT_DEDUCTIONS.insurance),
+    mkDeduction('振込手数料','fixed', transferFee!=null?transferFee:DEFAULT_DEDUCTIONS.transferFee),
+    mkDeduction('リネン費','percent', linenPct!=null?linenPct:DEFAULT_LINEN_RATE_PCT),
+    mkDeduction('材料費','fixed', 0),
+  ];
+}
+
+/* ============================== ストレージ ============================== */
+const MEM_FALLBACK = {};
+const LS_PREFIX = 'itaku-tool:';
+function memKey(key,shared){ return (shared?'shared:':'priv:')+key; }
+function hasClaudeStorage(){ return typeof window.storage!=='undefined' && window.storage && typeof window.storage.get==='function'; }
+async function sGet(key, shared){
+  if(hasClaudeStorage()){
+    try{ const r = await window.storage.get(key, !!shared); return r ? JSON.parse(r.value) : null; }
+    catch(e){ /* fall through to localStorage */ }
+  }
+  try{
+    const v = window.localStorage.getItem(LS_PREFIX+memKey(key,shared));
+    return v!=null ? JSON.parse(v) : null;
+  }catch(e){ return MEM_FALLBACK[memKey(key,shared)] ?? null; }
+}
+async function sSet(key,val, shared){
+  if(hasClaudeStorage()){
+    try{ await window.storage.set(key, JSON.stringify(val), !!shared); return; }
+    catch(e){ /* fall through to localStorage */ }
+  }
+  try{ window.localStorage.setItem(LS_PREFIX+memKey(key,shared), JSON.stringify(val)); }
+  catch(e){ MEM_FALLBACK[memKey(key,shared)]=val; }
+}
+
+/* ============================== ユーティリティ ============================== */
+function uid(){ return 'id'+Math.random().toString(36).slice(2,10); }
+function yen(n){ n = Math.round(n||0); return '¥' + n.toLocaleString('ja-JP'); }
+function normName(s){ return (s||'').replace(/[\s\u3000]+/g,''); }
+function escapeHtml(s){
+  return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function toHalfWidthDigits(s){
+  return (s||'').replace(/[\uFF10-\uFF19]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+}
+function extractDuration(name){
+  const m = toHalfWidthDigits(name||'').match(/(\d{2,3})\s*分/);
+  return m ? parseInt(m[1],10) : null;
+}
+function parseCSVText(text){
+  const rows=[]; let row=[], field='', inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; }
+      else field+=c;
+    }else{
+      if(c==='"') inQ=true;
+      else if(c===','){ row.push(field); field=''; }
+      else if(c==='\r'){ /* skip */ }
+      else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else field+=c;
+    }
+  }
+  if(field.length>0 || row.length>0){ row.push(field); rows.push(row); }
+  return rows.filter(r => !(r.length===1 && r[0]===''));
+}
+
+/* 商品リストに基づく分類: キーワード一致 → CSVカテゴリ一致 → 分数の近さ → 受け皿 */
+function classifyRow(menu, csvCat, products){
+  const candidates = products.filter(p=>p.kind!=='manual');
+  for(const p of candidates){
+    if(p.isCatchAll) continue;
+    for(const kw of (p.keywords||[])){ if(kw && menu.includes(kw)) return p.id; }
+  }
+  for(const p of candidates){
+    if(p.isCatchAll) continue;
+    if(p.csvCategoryMatch && csvCat===p.csvCategoryMatch) return p.id;
+  }
+  const wantSet = menu.includes('セット');
+  const durPool = candidates.filter(p=>p.kind==='count' && p.durationMinutes!=null && !p.isCatchAll && !!p.isSet===wantSet &&
+    (p.isSet || !p.durationFallbackCategories || p.durationFallbackCategories.length===0 || p.durationFallbackCategories.includes(csvCat)));
+  if(durPool.length){
+    const d = extractDuration(menu);
+    if(d!=null){
+      let best=null, bd=Infinity;
+      for(const p of durPool){ const diff=Math.abs(p.durationMinutes-d); if(diff<bd){bd=diff;best=p;} }
+      if(best) return best.id;
+    }
+  }
+  const catchAll = candidates.find(p=>p.isCatchAll);
+  return catchAll ? catchAll.id : (candidates[0] ? candidates[0].id : null);
+}
+
+/* ============================== 状態 ============================== */
+let S = {
+  companyInfo:{name:'', zip:'', address:''},
+  staffList:[],
+  currentStaffId:null,
+  currentMonth:'',
+  csvRows:[],              // {date,menu,csvCat,qty,amount,nomination,newOrRepeat,assignedProductIds[],excluded,manualOverride}
+  manualQty:{},            // productId -> number override
+  manualRevenue:{},        // productId -> number override (aggregate)
+  manualAmount:{},         // productId -> number override (manual kind)
+  manualDeductions:{}      // {insurance,transferFee,linen,material} overrides
+};
+
+function currentStaff(){ return S.staffList.find(s=>s.id===S.currentStaffId) || null; }
+
+function migrateStaff(s){
+  if(!s.products){
+    s.products = defaultProducts(s.prices, s.rateStandard, s.rateHead, s.nominationUnit);
+    delete s.prices; delete s.rateStandard; delete s.rateHead; delete s.nominationUnit;
+  }
+  if(!s.deductions){
+    s.deductions = defaultDeductions(s.insurance, s.transferFee, s.linenFeeRate);
+    delete s.insurance; delete s.transferFee; delete s.linenFeeRate;
+  }
+  return s;
+}
+
+/* ============================== 初期化 ============================== */
+async function init(){
+  S.companyInfo = (await sGet('company-info')) || {name:'SH合同会社', zip:'271-0072', address:'千葉県松戸市竹ヶ花１７3', seal: SEAL_DEFAULT_DATA_URI};
+  if(S.companyInfo.seal===undefined) S.companyInfo.seal = SEAL_DEFAULT_DATA_URI;
+  const ids = (await sGet('staff-ids')) || [];
+  S.staffList = [];
+  for(const id of ids){
+    const st = await sGet('staff-'+id);
+    if(st) S.staffList.push(migrateStaff(st));
+  }
+
+  const d = new Date();
+  d.setMonth(d.getMonth()-1);
+  S.currentMonth = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('monthInput').value = S.currentMonth;
+
+  if(S.staffList.length===0){
+    const s = {
+      id:uid(), name:'浅野 恵理', aliases:['浅野  恵理','アサノ  エリ'],
+      address:'', zip:'',
+      products: defaultProducts(DEFAULT_PRICES, DEFAULT_RATE_STANDARD, DEFAULT_RATE_HEAD, 0),
+      deductions: defaultDeductions()
+    };
+    S.staffList.push(s);
+    await sSet('staff-ids', S.staffList.map(x=>x.id));
+    await sSet('staff-'+s.id, s);
+  }
+  S.currentStaffId = S.staffList[0].id;
+
+  renderStaffSelect();
+  resetWorkingData();
+  renderAll();
+  await refreshSavedHint();
+
+  document.getElementById('staffSelect').addEventListener('change', async (e)=>{
+    S.currentStaffId = e.target.value;
+    resetWorkingData();
+    document.getElementById('productsBox').style.display='none';
+    renderAll();
+    await refreshSavedHint();
+  });
+  document.getElementById('monthInput').addEventListener('change', async (e)=>{
+    S.currentMonth = e.target.value;
+    await refreshSavedHint();
+  });
+  document.getElementById('btnAddStaff').addEventListener('click', ()=>openStaffModal(null));
+  document.getElementById('btnEditStaff').addEventListener('click', ()=>openStaffModal(currentStaff()));
+  document.getElementById('btnCompany').addEventListener('click', openCompanyModal);
+  document.getElementById('csvFile').addEventListener('change', (e)=>handleCsvFile(e,'shift_jis'));
+  document.getElementById('btnEncodingToggle').addEventListener('click', ()=>{
+    const f = document.getElementById('csvFile').files[0];
+    if(f) handleCsvFile({target:{files:[f]}}, 'utf-8');
+  });
+  document.getElementById('btnToggleProducts').addEventListener('click', ()=>{
+    const box = document.getElementById('productsBox');
+    box.style.display = box.style.display==='none' ? 'block' : 'none';
+    if(box.style.display==='block') renderProductsBox();
+  });
+  document.getElementById('btnToggleDeductions').addEventListener('click', ()=>{
+    const box = document.getElementById('deductionsBox');
+    box.style.display = box.style.display==='none' ? 'block' : 'none';
+    if(box.style.display==='block') renderDeductionsBox();
+  });
+  document.getElementById('btnSaveRecord').addEventListener('click', saveRecord);
+  document.getElementById('btnLoadRecord').addEventListener('click', loadRecord);
+  document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+}
+
+function resetWorkingData(){
+  S.csvRows=[];
+  S.manualQty={}; S.manualRevenue={}; S.manualAmount={};
+  S.manualDeductions={};
+}
+
+function renderStaffSelect(){
+  const sel = document.getElementById('staffSelect');
+  sel.innerHTML = S.staffList.map(s=>'<option value="'+s.id+'"'+(s.id===S.currentStaffId?' selected':'')+'>'+escapeHtml(s.name)+'</option>').join('');
+}
+
+function renderAll(){
+  renderStep1Stats();
+  renderRowsTable();
+  renderCatTable();
+  renderDeductWrap();
+  renderHero();
+  renderSheets();
+  const box = document.getElementById('productsBox');
+  if(box.style.display!=='none') renderProductsBox();
+  const dbox = document.getElementById('deductionsBox');
+  if(dbox.style.display!=='none') renderDeductionsBox();
+}
+
+function productOptionsForRow(){
+  const st = currentStaff();
+  return st.products.filter(p=>p.kind!=='manual');
+}
+
+/* ============================== CSV 取込 ============================== */
+async function handleCsvFile(e, encoding){
+  const file = e.target.files[0];
+  if(!file) return;
+  const buf = await file.arrayBuffer();
+  let text;
+  try{ text = new TextDecoder(encoding).decode(buf); }
+  catch(err){ text = new TextDecoder('utf-8').decode(buf); }
+
+  const table = parseCSVText(text);
+  if(table.length<2){ alert('CSVを読み取れませんでした。'); return; }
+  const header = table[0].map(h=>h.trim());
+  const idx = (name)=>header.indexOf(name);
+  const iDate=idx('会計日'), iKubun=idx('会計区分'), iCsvCat=idx('カテゴリ'), iMenu=idx('メニュー・店販・割引・サービス・オプション'),
+        iQty=idx('個数'), iAmount=idx('金額'), iStaff=idx('スタッフ'), iNom=idx('指名'), iNewRep=idx('新規再来');
+
+  const st = currentStaff();
+  const aliases = (st.aliases && st.aliases.length ? st.aliases : [st.name]).map(normName);
+
+  const rows=[];
+  for(let i=1;i<table.length;i++){
+    const r = table[i];
+    if(!r || r.length<3) continue;
+    const staffName = iStaff>=0 ? (r[iStaff]||'') : '';
+    if(!aliases.includes(normName(staffName))) continue;
+    const kubun = iKubun>=0 ? (r[iKubun]||'') : '';
+    if(kubun.includes('取消') || kubun.includes('キャンセル')) continue;
+    const menu = iMenu>=0 ? (r[iMenu]||'') : '';
+    const csvCat = iCsvCat>=0 ? (r[iCsvCat]||'') : '';
+    const qty = iQty>=0 ? (parseInt(r[iQty],10)||0) : 0;
+    const amount = iAmount>=0 ? (parseInt(r[iAmount],10)||0) : 0;
+    rows.push({
+      date: iDate>=0 ? r[iDate] : '',
+      menu, csvCat, qty, amount,
+      nomination: iNom>=0 ? (r[iNom]||'') : '',
+      newOrRepeat: iNewRep>=0 ? (r[iNewRep]||'') : '',
+      assignedProductIds: [classifyRow(menu, csvCat, st.products)].filter(Boolean),
+      excluded:false,
+      manualOverride:false
+    });
+  }
+  if(rows.length===0){
+    alert('選択中のスタッフ「'+st.name+'」に一致する行が見つかりませんでした。文字化けしている場合は「UTF-8で再読込」をお試しください。表記ゆれ（カナ表記など）は基本情報の編集から登録できます。');
+  }
+  S.csvRows = rows;
+  S.manualQty={}; S.manualRevenue={}; S.manualAmount={};
+  renderAll();
+}
+
+function computeAuto(){
+  const st = currentStaff();
+  const counts={}, revenue={};
+  let total=0,newCount=0,repeatCount=0,nomCount=0;
+  for(const r of S.csvRows){
+    if(r.excluded) continue;
+    total++;
+    if(r.newOrRepeat && r.newOrRepeat.includes('新規')) newCount++;
+    else if(r.newOrRepeat) repeatCount++;
+    if(r.nomination && r.nomination.includes('指名あり')) nomCount++;
+    (r.assignedProductIds||[]).forEach(pid=>{
+      const p = st.products.find(x=>x.id===pid);
+      if(!p) return;
+      if(p.kind==='count') counts[p.id]=(counts[p.id]||0)+r.qty;
+      else if(p.kind==='aggregate') revenue[p.id]=(revenue[p.id]||0)+r.amount;
+    });
+  }
+  return {counts,revenue,total,newCount,repeatCount,nomCount};
+}
+
+/* ============================== 表示: STEP1 ============================== */
+function renderStep1Stats(){
+  const wrap = document.getElementById('step1Stats');
+  if(S.csvRows.length===0){ wrap.innerHTML='<div class="empty">まだCSVが取り込まれていません。</div>'; return; }
+  const a = computeAuto();
+  wrap.innerHTML =
+    '<div class="stat-cards">'+
+    statCard(a.total,'取込件数')+
+    statCard(a.newCount,'新規')+
+    statCard(a.repeatCount,'再来')+
+    statCard(a.nomCount,'指名あり')+
+    '</div>';
+}
+function statCard(n,l){ return '<div class="stat-card"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+
+/* ============================== 表示: 明細行テーブル ============================== */
+function renderRowsTable(){
+  const wrap = document.getElementById('rowsTableWrap');
+  if(S.csvRows.length===0){ wrap.innerHTML='<div class="empty">CSVを取り込むと明細がここに表示されます。</div>'; return; }
+  const opts = productOptionsForRow();
+  let html = '<div class="hint" style="margin-bottom:6px;">1件の明細を複数の区分にまたがって計上できます（例: 30分コース＋延長10分）。</div>';
+  html += '<table><thead><tr><th>日付</th><th>メニュー</th><th class="num">金額</th><th>新規/再来</th><th>指名</th><th style="width:230px;">区分</th></tr></thead><tbody>';
+  S.csvRows.forEach((r,i)=>{
+    const d = r.date && r.date.length===8 ? r.date.slice(0,4)+'/'+r.date.slice(4,6)+'/'+r.date.slice(6,8) : r.date;
+    const ids = r.assignedProductIds||[];
+    html += '<tr'+(r.excluded?' class="row-excluded"':'')+'>'+
+      '<td>'+escapeHtml(d)+'</td>'+
+      '<td class="menu-name">'+escapeHtml(r.menu)+'</td>'+
+      '<td class="num">'+yen(r.amount)+'</td>'+
+      '<td>'+(r.newOrRepeat ? '<span class="tag'+(r.newOrRepeat.includes('新規')?'':' repeat')+'">'+escapeHtml(r.newOrRepeat)+'</span>' : '')+'</td>'+
+      '<td>'+(r.nomination && r.nomination.includes('指名あり') ? '<span class="tag nom">指名</span>' : '')+'</td>'+
+      '<td class="row-classify">'+
+        '<div class="chip-list">'+
+          ids.map(pid=>{
+            const p = opts.find(x=>x.id===pid);
+            return '<span class="chip">'+escapeHtml(p?p.label:'？')+'<button type="button" data-rmchip="'+i+'|'+pid+'">×</button></span>';
+          }).join('')+
+        '</div>'+
+        '<select class="cat-add" data-addidx="'+i+'"><option value="">＋ 区分を追加</option>'+
+          opts.filter(p=>!ids.includes(p.id)).map(p=>'<option value="'+p.id+'">'+escapeHtml(p.label)+'</option>').join('')+
+        '</select>'+
+        '<label class="excl-check"><input type="checkbox" data-exclude="'+i+'" '+(r.excluded?'checked':'')+'> 対象外</label>'+
+        (r.manualOverride ? '<span class="auto-hint">手動 <button class="reset-btn" data-rowreset="'+i+'">自動に戻す</button></span>' : '')+
+      '</td>'+
+    '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  function afterRowChange(){
+    renderRowsTable(); renderCatTable(); renderStep1Stats(); renderDeductWrap(); renderHero(); renderSheets();
+  }
+  wrap.querySelectorAll('[data-addidx]').forEach(sel=>{
+    sel.addEventListener('change',(e)=>{
+      const i = parseInt(e.target.dataset.addidx,10);
+      const pid = e.target.value;
+      if(!pid) return;
+      const row = S.csvRows[i];
+      row.assignedProductIds = (row.assignedProductIds||[]).concat([pid]);
+      row.manualOverride = true;
+      afterRowChange();
+    });
+  });
+  wrap.querySelectorAll('[data-rmchip]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const [iStr,pid] = e.target.dataset.rmchip.split('|');
+      const i = parseInt(iStr,10);
+      const row = S.csvRows[i];
+      row.assignedProductIds = (row.assignedProductIds||[]).filter(x=>x!==pid);
+      row.manualOverride = true;
+      afterRowChange();
+    });
+  });
+  wrap.querySelectorAll('[data-exclude]').forEach(cb=>{
+    cb.addEventListener('change',(e)=>{
+      const i = parseInt(e.target.dataset.exclude,10);
+      S.csvRows[i].excluded = e.target.checked;
+      S.csvRows[i].manualOverride = true;
+      afterRowChange();
+    });
+  });
+  wrap.querySelectorAll('[data-rowreset]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const i = parseInt(e.target.dataset.rowreset,10);
+      const st = currentStaff();
+      const row = S.csvRows[i];
+      row.assignedProductIds = [classifyRow(row.menu, row.csvCat, st.products)].filter(Boolean);
+      row.excluded = false;
+      row.manualOverride = false;
+      afterRowChange();
+    });
+  });
+}
+
+/* ============================== 商品編集パネル ============================== */
+function renderProductsBox(){
+  const box = document.getElementById('productsBox');
+  const st = currentStaff();
+  let html = '<div class="hint">並び順はキーワード判定の優先順位、および明細書の表示順になります。「受け皿」は他のどれにも一致しなかった行の集計先です（通常は特別メニューなど1つだけ）。</div>';
+  st.products.forEach((p,i)=>{
+    html += '<div class="product-card" data-i="'+i+'">'+
+      '<div class="pc-row1">'+
+        '<input class="pc-label" data-f="label" value="'+escapeHtml(p.label)+'">'+
+        '<select class="pc-kind" data-f="kind">'+
+          '<option value="count"'+(p.kind==='count'?' selected':'')+'>件数×単価</option>'+
+          '<option value="aggregate"'+(p.kind==='aggregate'?' selected':'')+'>合算金額×歩合</option>'+
+          '<option value="manual"'+(p.kind==='manual'?' selected':'')+'>手入力</option>'+
+        '</select>'+
+        '<button data-up="1" title="上へ">↑</button><button data-down="1" title="下へ">↓</button>'+
+        '<button class="pc-del" data-del="1" title="削除">✕</button>'+
+      '</div>'+
+      '<div class="pc-row2">'+
+        '<div class="pc-field"><label>単価</label><input type="number" data-f="price" value="'+p.price+'"></div>'+
+        '<div class="pc-field"><label>歩合%</label><input type="number" data-f="rate" value="'+Math.round(p.rate*100)+'"></div>'+
+        '<div class="pc-field"><label>分数(任意)</label><input type="number" data-f="durationMinutes" value="'+(p.durationMinutes!=null?p.durationMinutes:'')+'"></div>'+
+        '<label class="pc-check"><input type="checkbox" data-f="isSet" '+(p.isSet?'checked':'')+'> セット扱い</label>'+
+        '<label class="pc-check"><input type="checkbox" data-f="isCatchAll" '+(p.isCatchAll?'checked':'')+'> 受け皿</label>'+
+        '<label class="pc-check"><input type="checkbox" data-f="autoSource" '+(p.autoSource==='nomination'?'checked':'')+'> 指名件数から自動計算</label>'+
+      '</div>'+
+      '<div class="pc-row3">'+
+        '<input data-f="keywords" placeholder="キーワード（カンマ区切り、メニュー名に含まれていたら優先分類）" value="'+escapeHtml((p.keywords||[]).join(', '))+'">'+
+        '<input class="pc-csvcat" data-f="csvCategoryMatch" placeholder="CSVカテゴリ一致（任意）" value="'+escapeHtml(p.csvCategoryMatch||'')+'">'+
+      '</div>'+
+      (p.durationMinutes!=null ? '<div class="pc-row3"><input data-f="durationFallbackCategories" placeholder="分数判定の対象CSVカテゴリ（カンマ区切り、空欄なら全カテゴリ対象）" value="'+escapeHtml((p.durationFallbackCategories||[]).join(', '))+'"></div>' : '')+
+    '</div>';
+  });
+  html += '<button class="btn ghost small" id="btnAddProduct">＋ 商品を追加</button>';
+  box.innerHTML = html;
+
+  async function persistAndRecalc(){
+    await sSet('staff-'+st.id, st);
+    S.csvRows.forEach(r=>{ if(!r.manualOverride) r.assignedProductIds = [classifyRow(r.menu, r.csvCat, st.products)].filter(Boolean); });
+    renderRowsTable(); renderCatTable(); renderStep1Stats(); renderDeductWrap(); renderHero(); renderSheets();
+  }
+
+  box.querySelectorAll('.product-card').forEach(card=>{
+    const i = parseInt(card.dataset.i,10);
+    card.querySelectorAll('input,select').forEach(el=>{
+      el.addEventListener('change', async (e)=>{
+        const f = e.target.dataset.f;
+        const p = st.products[i];
+        if(f==='label') p.label = e.target.value;
+        else if(f==='kind') p.kind = e.target.value;
+        else if(f==='price') p.price = Number(e.target.value)||0;
+        else if(f==='rate') p.rate = (Number(e.target.value)||0)/100;
+        else if(f==='durationMinutes') p.durationMinutes = e.target.value==='' ? null : Number(e.target.value);
+        else if(f==='isSet') p.isSet = e.target.checked;
+        else if(f==='isCatchAll'){
+          p.isCatchAll = e.target.checked;
+          if(p.isCatchAll) st.products.forEach((pp,ii)=>{ if(ii!==i) pp.isCatchAll=false; });
+        }
+        else if(f==='autoSource') p.autoSource = e.target.checked ? 'nomination' : null;
+        else if(f==='keywords') p.keywords = e.target.value.split(',').map(x=>x.trim()).filter(Boolean);
+        else if(f==='csvCategoryMatch') p.csvCategoryMatch = e.target.value.trim();
+        else if(f==='durationFallbackCategories') p.durationFallbackCategories = e.target.value.split(',').map(x=>x.trim()).filter(Boolean);
+        await persistAndRecalc();
+        if(f==='isCatchAll' || f==='kind' || f==='durationMinutes') renderProductsBox();
+      });
+    });
+    card.querySelector('[data-del]').addEventListener('click', async ()=>{
+      if(!confirm('「'+st.products[i].label+'」を削除しますか？')) return;
+      st.products.splice(i,1);
+      await persistAndRecalc();
+      renderProductsBox();
+    });
+    card.querySelector('[data-up]').addEventListener('click', async ()=>{
+      if(i===0) return;
+      [st.products[i-1],st.products[i]] = [st.products[i],st.products[i-1]];
+      await persistAndRecalc();
+      renderProductsBox();
+    });
+    card.querySelector('[data-down]').addEventListener('click', async ()=>{
+      if(i===st.products.length-1) return;
+      [st.products[i+1],st.products[i]] = [st.products[i],st.products[i+1]];
+      await persistAndRecalc();
+      renderProductsBox();
+    });
+  });
+  document.getElementById('btnAddProduct').addEventListener('click', async ()=>{
+    st.products.push(mkProduct('新しい商品','count',0,DEFAULT_RATE_STANDARD,{}));
+    await persistAndRecalc();
+    renderProductsBox();
+  });
+}
+
+/* ============================== 区分ごとの集計テーブル ============================== */
+function calcAmounts(){
+  const st = currentStaff();
+  const auto = computeAuto();
+  const result = {};
+  st.products.forEach(p=>{
+    if(p.kind==='count'){
+      const autoQty = auto.counts[p.id]||0;
+      const qty = (S.manualQty[p.id]!=null) ? S.manualQty[p.id] : autoQty;
+      result[p.id] = {kind:'count', qty, autoQty, price:p.price, rate:p.rate, amount: Math.round(p.price*qty*p.rate)};
+    }else if(p.kind==='aggregate'){
+      const autoPrice = auto.revenue[p.id]||0;
+      const price = (S.manualRevenue[p.id]!=null) ? S.manualRevenue[p.id] : autoPrice;
+      result[p.id] = {kind:'aggregate', qty:1, price, autoPrice, rate:p.rate, amount: Math.round(price*p.rate)};
+    }else{
+      const autoAmount = p.autoSource==='nomination' ? Math.round((p.price||0)*auto.nomCount) : 0;
+      const amount = (S.manualAmount[p.id]!=null) ? S.manualAmount[p.id] : autoAmount;
+      result[p.id] = {kind:'manual', amount, autoAmount, nomCount:auto.nomCount};
+    }
+  });
+  return result;
+}
+
+function renderCatTable(){
+  const wrap = document.getElementById('catTableWrap');
+  const st = currentStaff();
+  if(!st){ wrap.innerHTML=''; return; }
+  const amounts = calcAmounts();
+  let html = '<table class="cat-table"><thead><tr><th>商品</th><th class="num">単価</th><th class="num">数量</th><th class="num">％</th><th class="num">金額</th></tr></thead><tbody>';
+  st.products.forEach(p=>{
+    const a = amounts[p.id];
+    if(a.kind==='count'){
+      html += '<tr><td>'+escapeHtml(p.label)+'</td>'+
+        '<td class="field num">'+yen(a.price)+'</td>'+
+        '<td class="field num"><input class="qty" type="number" data-id="'+p.id+'" data-field="qty" value="'+a.qty+'">'+
+          (a.qty!==a.autoQty ? '<span class="auto-hint">自動:'+a.autoQty+'件 <button class="reset-btn" data-reset="'+p.id+'">戻す</button></span>' : '<span class="auto-hint">自動判定</span>')+
+        '</td>'+
+        '<td class="field num">'+Math.round(a.rate*100)+'%</td>'+
+        '<td class="field num">'+yen(a.amount)+'</td></tr>';
+    }else if(a.kind==='aggregate'){
+      html += '<tr><td>'+escapeHtml(p.label)+'</td>'+
+        '<td class="field num"><input class="price" type="number" data-id="'+p.id+'" data-field="price" value="'+a.price+'">'+
+          (a.price!==a.autoPrice ? '<span class="auto-hint">自動:'+yen(a.autoPrice)+' <button class="reset-btn" data-reset="'+p.id+'">戻す</button></span>' : '<span class="auto-hint">該当明細の合算</span>')+
+        '</td>'+
+        '<td class="field num">1</td>'+
+        '<td class="field num">'+Math.round(a.rate*100)+'%</td>'+
+        '<td class="field num">'+yen(a.amount)+'</td></tr>';
+    }else{
+      html += '<tr><td>'+escapeHtml(p.label)+'</td><td class="field num">—</td><td class="field num">—</td><td class="field num">—</td>'+
+        '<td class="field num"><input class="amt-manual" type="number" data-id="'+p.id+'" data-field="amount" value="'+a.amount+'">'+
+        (a.autoAmount ? '<span class="auto-hint">自動:'+yen(a.autoAmount)+'（指名'+a.nomCount+'件）</span>' : '')+
+        '</td></tr>';
+    }
+  });
+  const total = Object.values(amounts).reduce((s,a)=>s+(a.amount||0),0);
+  html += '</tbody><tfoot><tr><td colspan="4">支給総額</td><td class="num">'+yen(total)+'</td></tr></tfoot></table>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('input[data-id]').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      const id = e.target.dataset.id, field = e.target.dataset.field;
+      const val = e.target.value==='' ? null : Number(e.target.value);
+      if(field==='qty') S.manualQty[id]=val;
+      else if(field==='price') S.manualRevenue[id]=val;
+      else if(field==='amount') S.manualAmount[id]=val;
+      renderCatTable(); renderDeductWrap(); renderHero(); renderSheets();
+    });
+  });
+  wrap.querySelectorAll('[data-reset]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      const id = e.target.dataset.reset;
+      delete S.manualQty[id]; delete S.manualRevenue[id];
+      renderCatTable(); renderDeductWrap(); renderHero(); renderSheets();
+    });
+  });
+}
+
+/* ============================== 控除・支給総額・差引 ============================== */
+function totals(){
+  const st = currentStaff();
+  const amounts = calcAmounts();
+  const gross = Object.values(amounts).reduce((s,a)=>s+(a.amount||0),0);
+  const ded = {};
+  let dedTotal = 0;
+  st.deductions.forEach(d=>{
+    const auto = d.kind==='percent' ? Math.round(gross*(d.percent||0)/100) : (d.amount||0);
+    const shown = (S.manualDeductions[d.id]!=null) ? S.manualDeductions[d.id] : auto;
+    ded[d.id] = {auto, shown};
+    dedTotal += Number(shown)||0;
+  });
+  return {amounts, gross, ded, dedTotal, net: gross-dedTotal};
+}
+
+function renderDeductWrap(){
+  const wrap = document.getElementById('deductWrap');
+  const st = currentStaff();
+  const t = totals();
+  wrap.innerHTML = '<div class="deduct-grid">'+st.deductions.map(d=>{
+    const info = t.ded[d.id];
+    const isAuto = S.manualDeductions[d.id]==null;
+    const labelExtra = d.kind==='percent' ? '（支給総額の'+d.percent+'%）' : '';
+    return '<div class="deduct-item"><label>'+escapeHtml(d.label)+labelExtra+'</label>'+
+      '<input type="number" data-ded="'+d.id+'" value="'+info.shown+'">'+
+      (!isAuto ? '<span class="auto-hint">自動:'+yen(info.auto)+' <button class="reset-btn" data-dedreset="'+d.id+'">戻す</button></span>' : (d.kind==='percent' ? '<span class="auto-hint">自動計算</span>' : ''))+
+      '</div>';
+  }).join('')+'</div>';
+  wrap.querySelectorAll('input[data-ded]').forEach(inp=>{
+    inp.addEventListener('change',(e)=>{
+      S.manualDeductions[e.target.dataset.ded] = e.target.value==='' ? null : Number(e.target.value);
+      renderDeductWrap(); renderHero(); renderSheets();
+    });
+  });
+  wrap.querySelectorAll('[data-dedreset]').forEach(btn=>{
+    btn.addEventListener('click',(e)=>{
+      delete S.manualDeductions[e.target.dataset.dedreset];
+      renderDeductWrap(); renderHero(); renderSheets();
+    });
+  });
+}
+
+/* ============================== 控除項目編集パネル ============================== */
+function renderDeductionsBox(){
+  const box = document.getElementById('deductionsBox');
+  const st = currentStaff();
+  let html = '<div class="hint">名前・種類（固定額／支給総額の％）・初期値を編集できます。並び順は明細書の表示順になります。</div>';
+  st.deductions.forEach((d,i)=>{
+    html += '<div class="product-card" data-i="'+i+'">'+
+      '<div class="pc-row1">'+
+        '<input class="pc-label" data-f="label" value="'+escapeHtml(d.label)+'">'+
+        '<select class="pc-kind" data-f="kind">'+
+          '<option value="fixed"'+(d.kind==='fixed'?' selected':'')+'>固定額</option>'+
+          '<option value="percent"'+(d.kind==='percent'?' selected':'')+'>支給総額の％</option>'+
+        '</select>'+
+        '<button data-up="1" title="上へ">↑</button><button data-down="1" title="下へ">↓</button>'+
+        '<button class="pc-del" data-del="1" title="削除">✕</button>'+
+      '</div>'+
+      '<div class="pc-row2">'+
+        (d.kind==='fixed'
+          ? '<div class="pc-field"><label>金額（初期値）</label><input type="number" data-f="amount" value="'+(d.amount||0)+'"></div>'
+          : '<div class="pc-field"><label>％</label><input type="number" data-f="percent" value="'+(d.percent||0)+'"></div>')+
+      '</div>'+
+    '</div>';
+  });
+  html += '<button class="btn ghost small" id="btnAddDeduction">＋ 控除項目を追加</button>';
+  box.innerHTML = html;
+
+  async function persist(){ await sSet('staff-'+st.id, st); renderDeductWrap(); renderHero(); renderSheets(); }
+
+  box.querySelectorAll('.product-card').forEach(card=>{
+    const i = parseInt(card.dataset.i,10);
+    card.querySelectorAll('input,select').forEach(el=>{
+      el.addEventListener('change', async (e)=>{
+        const f = e.target.dataset.f;
+        const d = st.deductions[i];
+        if(f==='label') d.label = e.target.value;
+        else if(f==='kind') d.kind = e.target.value;
+        else if(f==='amount') d.amount = Number(e.target.value)||0;
+        else if(f==='percent') d.percent = Number(e.target.value)||0;
+        await persist();
+        if(f==='kind') renderDeductionsBox();
+      });
+    });
+    card.querySelector('[data-del]').addEventListener('click', async ()=>{
+      if(!confirm('「'+st.deductions[i].label+'」を削除しますか？')) return;
+      st.deductions.splice(i,1);
+      await persist();
+      renderDeductionsBox();
+    });
+    card.querySelector('[data-up]').addEventListener('click', async ()=>{
+      if(i===0) return;
+      [st.deductions[i-1],st.deductions[i]] = [st.deductions[i],st.deductions[i-1]];
+      await persist();
+      renderDeductionsBox();
+    });
+    card.querySelector('[data-down]').addEventListener('click', async ()=>{
+      if(i===st.deductions.length-1) return;
+      [st.deductions[i+1],st.deductions[i]] = [st.deductions[i],st.deductions[i+1]];
+      await persist();
+      renderDeductionsBox();
+    });
+  });
+  document.getElementById('btnAddDeduction').addEventListener('click', async ()=>{
+    st.deductions.push(mkDeduction('新しい項目','fixed',0));
+    await persist();
+    renderDeductionsBox();
+  });
+}
+
+function renderHero(){
+  const wrap = document.getElementById('heroWrap');
+  const st = currentStaff();
+  if(!st){ wrap.innerHTML=''; return; }
+  const t = totals();
+  wrap.innerHTML =
+    '<div class="hero"><div>'+
+    '<div class="label">'+escapeHtml(st.name)+' 様　'+escapeHtml(S.currentMonth)+' 分　差引支給額</div>'+
+    '<div class="amount">'+yen(t.net)+'</div>'+
+    '<div class="sub">支給総額 '+yen(t.gross)+'　－　控除総額 '+yen(t.dedTotal)+'</div>'+
+    '</div></div>';
+}
+
+/* ============================== 明細書プレビュー ============================== */
+function statementTable(st, amounts){
+  let rows = '';
+  st.products.forEach(p=>{
+    const a = amounts[p.id];
+    if(a.kind==='manual'){
+      rows += '<tr><td>'+escapeHtml(p.label)+'</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">'+yen(a.amount)+'</td></tr>';
+    }else{
+      rows += '<tr><td>'+escapeHtml(p.label)+'</td><td class="num">'+yen(a.price)+'</td><td class="num">'+a.qty+'</td><td class="num">'+Math.round(a.rate*100)+'%</td><td class="num">'+yen(a.amount)+'</td></tr>';
+    }
+  });
+  return '<table><thead><tr><th>商品</th><th class="num">単価</th><th class="num">数量</th><th class="num">%</th><th class="num">金額</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function deductRowsHtml(st, t){
+  return '<table><tbody>'+
+    st.deductions.map(d=>'<tr><td>'+escapeHtml(d.label)+'</td><td class="num">'+yen(t.ded[d.id].shown)+'</td></tr>').join('')+
+    '</tbody><tfoot><tr><td>控除総額</td><td class="num">'+yen(t.dedTotal)+'</td></tr></tfoot></table>';
+}
+function renderSheets(){
+  const wrap = document.getElementById('sheetWrap');
+  const st = currentStaff();
+  if(!st){ wrap.innerHTML=''; return; }
+  const t = totals();
+  const [y,m] = (S.currentMonth||'').split('-');
+  const jpTitle = (y&&m) ? (y+'年'+parseInt(m,10)+'月分') : '';
+
+  const paymentSheet =
+    '<div class="sheet payment-sheet">'+
+    '<h3>'+jpTitle+'　支払明細書</h3>'+
+    '<div class="addr-block"><span class="to">'+escapeHtml(st.name)+' 殿</span>'+
+      '<div class="from">'+
+        '<div class="from-seal-row">'+
+          '<span>'+escapeHtml(S.companyInfo.name)+'</span>'+
+          (S.companyInfo.seal ? '<img class="seal-img" src="'+S.companyInfo.seal+'" alt="社印">' : '')+
+        '</div>'+
+        '〒'+escapeHtml(S.companyInfo.zip)+'<br>'+escapeHtml(S.companyInfo.address)+
+      '</div></div>'+
+    '<div class="total-box"><div class="k">差引支給額</div><div class="v">'+yen(t.net)+'</div></div>'+
+    '<div class="sec-title">支給</div>'+
+    statementTable(st, t.amounts)+
+    '<div class="sec-title" style="margin-top:10px;">控除</div>'+
+    deductRowsHtml(st, t)+
+    '</div>';
+
+  const invoiceSheet =
+    '<div class="sheet invoice-sheet">'+
+    '<h3>'+jpTitle+'　請求書</h3>'+
+    '<div class="addr-block"><span class="to">'+escapeHtml(S.companyInfo.name)+' 様</span>'+
+      '<div class="from">請求外注者：'+escapeHtml(st.name)+'<br>'+escapeHtml(st.zip?('〒'+st.zip+' '):'')+escapeHtml(st.address)+'</div></div>'+
+    '<div class="total-box"><div class="k">差引支給額</div><div class="v">'+yen(t.net)+'</div></div>'+
+    '<div class="sec-title">支給</div>'+
+    statementTable(st, t.amounts)+
+    '<div class="sec-title" style="margin-top:10px;">控除</div>'+
+    deductRowsHtml(st, t)+
+    '</div>';
+
+  wrap.innerHTML = paymentSheet + invoiceSheet;
+}
+
+/* ============================== 保存 / 読込 ============================== */
+function recordKey(){ return 'record-'+S.currentStaffId+'-'+S.currentMonth; }
+async function saveRecord(){
+  const rec = {
+    csvRows:S.csvRows, manualQty:S.manualQty, manualRevenue:S.manualRevenue, manualAmount:S.manualAmount,
+    manualDeductions:S.manualDeductions, savedAt:new Date().toISOString()
+  };
+  await sSet(recordKey(), rec);
+  await refreshSavedHint();
+  const hint = document.getElementById('savedHint');
+  hint.textContent = '保存しました（'+new Date().toLocaleString('ja-JP')+'）';
+}
+async function loadRecord(){
+  const rec = await sGet(recordKey());
+  if(!rec){ alert('この月・このスタッフの保存データが見つかりません。'); return; }
+  S.csvRows = rec.csvRows||[];
+  S.manualQty = rec.manualQty||{};
+  S.manualRevenue = rec.manualRevenue||{};
+  S.manualAmount = rec.manualAmount||{};
+  S.manualDeductions = rec.manualDeductions||{};
+  renderAll();
+}
+async function refreshSavedHint(){
+  const rec = await sGet(recordKey());
+  const hint = document.getElementById('savedHint');
+  hint.textContent = rec ? ('保存データあり（'+new Date(rec.savedAt).toLocaleString('ja-JP')+'）') : 'この月の保存データはまだありません。';
+  hint.classList.toggle('active', !!rec);
+}
+
+/* ============================== モーダル: 会社情報 ============================== */
+function openCompanyModal(){
+  const root = document.getElementById('modalRoot');
+  let sealDraft = S.companyInfo.seal || '';
+  root.innerHTML =
+    '<div class="modal-backdrop" id="backdrop"><div class="modal">'+
+    '<h3>会社情報</h3>'+
+    '<div class="field-row"><label>会社名</label><input id="cName" value="'+escapeHtml(S.companyInfo.name)+'"></div>'+
+    '<div class="field-row"><label>郵便番号</label><input id="cZip" value="'+escapeHtml(S.companyInfo.zip)+'"></div>'+
+    '<div class="field-row"><label>住所</label><input id="cAddr" value="'+escapeHtml(S.companyInfo.address)+'"></div>'+
+    '<div class="field-row"><label>社印（支払明細書に印字されます）</label>'+
+      '<div id="cSealPreview" style="margin-bottom:6px;">'+(sealDraft ? '<img src="'+sealDraft+'" style="width:56px;height:56px;object-fit:contain;">' : '<span class="hint">未設定</span>')+'</div>'+
+      '<input type="file" id="cSealFile" accept="image/*">'+
+      (sealDraft ? '<button type="button" class="btn ghost small" id="cSealRemove" style="margin-top:6px;">社印を削除</button>' : '')+
+    '</div>'+
+    '<div class="modal-actions"><button class="btn ghost" id="cCancel">キャンセル</button><button class="btn" id="cSave">保存</button></div>'+
+    '</div></div>';
+  document.getElementById('backdrop').addEventListener('click',(e)=>{ if(e.target.id==='backdrop') root.innerHTML=''; });
+  document.getElementById('cCancel').addEventListener('click', ()=>root.innerHTML='');
+  document.getElementById('cSealFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      sealDraft = reader.result;
+      document.getElementById('cSealPreview').innerHTML = '<img src="'+sealDraft+'" style="width:56px;height:56px;object-fit:contain;">';
+    };
+    reader.readAsDataURL(file);
+  });
+  const removeBtn = document.getElementById('cSealRemove');
+  if(removeBtn) removeBtn.addEventListener('click', ()=>{
+    sealDraft = '';
+    document.getElementById('cSealPreview').innerHTML = '<span class="hint">未設定</span>';
+  });
+  document.getElementById('cSave').addEventListener('click', async ()=>{
+    S.companyInfo = {
+      name: document.getElementById('cName').value,
+      zip: document.getElementById('cZip').value,
+      address: document.getElementById('cAddr').value,
+      seal: sealDraft
+    };
+    await sSet('company-info', S.companyInfo);
+    root.innerHTML='';
+    renderSheets();
+  });
+}
+
+/* ============================== モーダル: スタッフ追加/編集 ============================== */
+function openStaffModal(staff){
+  const isNew = !staff;
+  const s = staff ? {...staff} : {
+    id:uid(), name:'', aliases:[], address:'', zip:'',
+    products: defaultProducts(DEFAULT_PRICES, DEFAULT_RATE_STANDARD, DEFAULT_RATE_HEAD, 0),
+    deductions: defaultDeductions()
+  };
+  const root = document.getElementById('modalRoot');
+  root.innerHTML =
+    '<div class="modal-backdrop" id="backdrop"><div class="modal">'+
+    '<h3>'+(isNew?'スタッフを追加':'基本情報を編集')+'</h3>'+
+    '<div class="field-row"><label>氏名</label><input id="sName" value="'+escapeHtml(s.name)+'"></div>'+
+    '<div class="field-row"><label>CSV上の表記（カンマ区切りで複数可・表記ゆれ対応）</label><input id="sAliases" value="'+escapeHtml((s.aliases||[]).join(', '))+'" placeholder="例: 浅野  恵理, アサノ  エリ"></div>'+
+    '<div class="field-row"><label>郵便番号（請求書用）</label><input id="sZip" value="'+escapeHtml(s.zip)+'"></div>'+
+    '<div class="field-row"><label>住所（請求書用）</label><input id="sAddr" value="'+escapeHtml(s.address)+'"></div>'+
+    '<div class="hint">商品（メニュー区分）や単価・歩合率、控除項目は、画面の「02 分類の確認・修正」内の「商品を編集する」「控除項目を編集する」から設定できます。</div>'+
+    '<div class="modal-actions">'+
+      (isNew?'':'<button class="btn warn" id="sDelete" style="margin-right:auto;">削除</button>')+
+      '<button class="btn ghost" id="sCancel">キャンセル</button><button class="btn" id="sSave">保存</button>'+
+    '</div>'+
+    '</div></div>';
+
+  document.getElementById('backdrop').addEventListener('click',(e)=>{ if(e.target.id==='backdrop') root.innerHTML=''; });
+  document.getElementById('sCancel').addEventListener('click', ()=>root.innerHTML='');
+  if(!isNew){
+    document.getElementById('sDelete').addEventListener('click', async ()=>{
+      if(!confirm(s.name+' を削除しますか？（保存済みの月次データは残ります）')) return;
+      S.staffList = S.staffList.filter(x=>x.id!==s.id);
+      await sSet('staff-ids', S.staffList.map(x=>x.id));
+      if(S.currentStaffId===s.id) S.currentStaffId = S.staffList[0] ? S.staffList[0].id : null;
+      root.innerHTML='';
+      renderStaffSelect(); resetWorkingData(); renderAll();
+    });
+  }
+  document.getElementById('sSave').addEventListener('click', async ()=>{
+    s.name = document.getElementById('sName').value.trim();
+    s.aliases = document.getElementById('sAliases').value.split(',').map(x=>x.trim()).filter(Boolean);
+    if(s.aliases.length===0 && s.name) s.aliases=[s.name];
+    s.zip = document.getElementById('sZip').value;
+    s.address = document.getElementById('sAddr').value;
+    if(!s.name){ alert('氏名を入力してください。'); return; }
+
+    if(isNew){
+      S.staffList.push(s);
+      await sSet('staff-ids', S.staffList.map(x=>x.id));
+      S.currentStaffId = s.id;
+    }else{
+      const i = S.staffList.findIndex(x=>x.id===s.id);
+      S.staffList[i] = s;
+    }
+    await sSet('staff-'+s.id, s);
+    root.innerHTML='';
+    renderStaffSelect(); resetWorkingData(); renderAll();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
